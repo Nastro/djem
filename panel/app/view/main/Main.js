@@ -41,7 +41,7 @@ Ext.define('djem.view.main.Main', {
   getToolbar: function() { return this.lookupReference('toolbar'); },
 
   controller: 'main',
-
+  keyMap: 'onKeyMap',
   layout: 'border',
   items: [
     { region: 'north', xtype: 'main-toolbar', cls: 'top-toolbar', reference: 'toolbar' }, {

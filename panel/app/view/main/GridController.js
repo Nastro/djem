@@ -164,8 +164,13 @@ Ext.define('djem.view.main.GridController', {
   rowdblclick: function(_this, record) { this.openDocument(_this, record); },
 
   itemkeydown: function(_this, record, item, index, e) {
-    if (e.getKey() == e.ENTER) {
-      this.openDocument(_this, record);
+    switch (e.getKey()) {
+      case e.ENTER:
+        this.openDocument(_this, record);
+        break;
+      case e.DELETE:
+        this.deleteDocument(_this, record);
+        break;
     }
   },
 

@@ -13,60 +13,61 @@ Ext.define('djem.view.main.MainController', {
     }
 
     djem.app.on('update.toolbar', function(ref, data) { toolbar.fireEvent('update.toolbar', ref, data); })
-      .on('click.toolbar', function(ref, params) { tabs.getActiveTab().fireEvent('click.toolbar', ref, params); })
-      .on('show.toolbar', function(result) { tabs.getActiveTab().fireEvent('show.toolbar', result); })
-      .on('change.toolbar', function() { tabChange(tabs.getActiveTab()); })
-      .on('deleteDocument',
-          function(_this, data) {
-            Ext.MessageBox.confirm('Delete document', 'Delete ' + data.title + ' ?', function(button) {
-              if (button == 'yes') {
-                Ext.create('djem.store.main.Content').action('delete').load({
-                  callback: function() {},
-                  params: { _doctype: data._doctype, id: data.id }
-                });
+            .on('click.toolbar', function(ref, params) { tabs.getActiveTab().fireEvent('click.toolbar', ref, params); })
+            .on('show.toolbar', function(result) { tabs.getActiveTab().fireEvent('show.toolbar', result); })
+            .on('change.toolbar', function() { tabChange(tabs.getActiveTab()); })
+            .on('deleteDocument',
+                function(_this, data) {
+                  Ext.MessageBox.confirm('Delete document', 'Delete ' + data.title + ' ?', function(button) {
+                    if (button == 'yes') {
+                      Ext.create('djem.store.main.Content').action('delete').load({
+                        callback: function() {},
+                        params: { _doctype: data._doctype, id: data.id }
+                      });
+                      _this.refresh();
+                    }
+                  });
+                })
+            .on('update.tab',
+                function(_this, data) {
+                  var tabId = data.id;
+                  var tab = tabs.query('#' + tabId)[0];
+                  if (tab) {
+                    if (data.title) {
+                      tab.setTitle(data.title);
+                    }
+                  }
+                })
+            .on('update.grid',
+                function(data) {
+                  var activeGrid = me.lookupReference('grid'), gridView = activeGrid.getView(),
+                      store = gridView.getStore(), params = store.getProxy().getExtraParams();
+
+                  if (data.tree == params.tree) {
+                    activeGrid.fireEvent('update.data');
+                  }
+                })
+            .on('remove.tab', function(data) {
+              var tabId = data.id;
+              var tab = tabs.query('#' + tabId)[0];
+              if (tab) {
+                tabs.remove(tab, true);
               }
             });
-          })
-      .on('update.tab',
-          function(_this, data) {
-            var tabId = data.id;
-            var tab = tabs.query('#' + tabId)[0];
-            if (tab) {
-              if (data.title) {
-                tab.setTitle(data.title);
-              }
-            }
-          })
-      .on('update.grid',
-          function(data) {
-            var activeGrid = me.lookupReference('grid'), gridView = activeGrid.getView(), store = gridView.getStore(),
-                params = store.getProxy().getExtraParams();
-
-            if (data.tree == params.tree) {
-              activeGrid.fireEvent('update.data');
-            }
-          })
-      .on('remove.tab', function(data) {
-        var tabId = data.id;
-        var tab = tabs.query('#' + tabId)[0];
-        if (tab) {
-          tabs.remove(tab, true);
-        }
-      });
 
     tabs.on('tabchange', function(_this, newTab) { tabChange(newTab); }).fireEvent('tabchange');
 
     me.lookupReference('tree')
-      .on('select',
-          function(_this, record) {
-            me.lookupReference('grid').fireEvent('load', record.get('id'), record.get('color'));
-          })
-      .on('load', function() {
-        this.getRootNode().expand();
-        if (this.getSelectionModel().getCount() === 0) {
-          this.getSelectionModel().select(this.getRootNode().getChildAt(0));
-        }
-      });
+            .on('select',
+                function(_this, record) {
+                  me.lookupReference('grid').fireEvent('load', record.get('id'), record.get('color'));
+                })
+            .on('load', function() {
+              this.getRootNode().expand();
+              if (this.getSelectionModel().getCount() === 0) {
+                this.getSelectionModel().select(this.getRootNode().getChildAt(0));
+              }
+            });
 
     me.lookupReference('grid').on('openDocument', function(_this, data) {
       var id = data.id || ++SharedData.nextDocumentNumber;
@@ -91,5 +92,26 @@ Ext.define('djem.view.main.MainController', {
 
     // инициализируем авторизационный токен
     djem.app.fireEvent('initSession', { success: function() { me.lookupReference('tree').getStore().load(); } });
-  }
+  },
+  onKeyMap: new Ext.util.KeyMap({
+    target: this,
+    ignoreInputFields: false,
+    binding: [{
+      key: Ext.event.Event.F5,
+      fn: function(code, e) {
+        Ext.MessageBox.show({
+          title: 'Перезагрузка?',
+          message: 'Вы точно хотите перезагрузить DJEM ?',
+          buttons: Ext.Msg.YESNO,
+          icon: Ext.Msg.QUESTION,
+          fn: function(btn) {
+            if (btn == 'yes') {
+              location.reload();
+            }
+          }
+        });
+        e.stopEvent();
+      }
+    }]
+  })
 });
